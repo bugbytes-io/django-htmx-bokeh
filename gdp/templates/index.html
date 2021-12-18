@@ -1,5 +1,40 @@
 {% extends 'base.html' %} 
 
 {% block content %}
-    {% lorem 3 %}
+    <p class="lead">GDP by country</p>
+
+    <div class="row">
+        <div id="barchart" class="col-10">
+            {% include 'partials/gdp-bar.html' %}
+        </div>
+        <div class="col-2">
+                <label>Year</label>
+                <select id="select-year" 
+                        class="custom-select" 
+                        name="year"
+                        autocomplete="off"
+                        hx-get="{% url 'index' %}" 
+                        hx-target="#barchart"
+                        hx-vals="js:{count: document.getElementById('count').value}">
+
+                    {% for year in years %}
+                        <option value="{{year}}" 
+                        {% if year_selected == year %} selected {% endif %}>{{year}}</option>
+                    {% endfor %}
+                </select>
+    
+                <hr/>
+                <label>Count</label>
+                <input type="number"
+                        id="count"
+                        name="count" 
+                        autocomplete="off"
+                        value="{{count}}"
+                        hx-get="{% url 'index' %}" 
+                        hx-target="#barchart"
+                        hx-vals="js:{year: document.getElementById('select-year').value}" />
+            </form>
+        </div>
+    </div>
+
 {% endblock %}
