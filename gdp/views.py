@@ -2,7 +2,7 @@ from django.db.models import Max, Min
 from django.shortcuts import render
 from bokeh.embed import components
 from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models import ColumnDataSource, HoverTool, NumeralTickFormatter
 
 from .models import GDP
 from . import plotting
@@ -23,7 +23,7 @@ def index(request):
     # extract data for that year for top N
     gdps = GDP.objects.filter(year=year).order_by('gdp').reverse()[:count]
 
-    # country names
+    # country names and GDPs
     country_names = [d.country for d in gdps]
     country_gdps = [d.gdp for d in gdps]
     cds = ColumnDataSource(data=dict(country_names=country_names, country_gdps=country_gdps))
@@ -56,3 +56,53 @@ def index(request):
     if request.htmx:
         return render(request, 'partials/gdp-bar.html', context)
     return render(request, 'index.html', context)
+
+def line(request):
+    countries = GDP.objects.values_list('country', flat=True).distinct()
+    country = request.GET.get('country', 'Germany')
+
+    gdps = GDP.objects.filter(country=country).order_by('year')
+
+    year_data = []
+    gdp_data = []
+    c = ['Germany', 'China', 'France']
+
+    for country in c:
+        gdps = GDP.objects.filter(country=country).order_by('year')
+        country_years = year_data.append([d.year for d in gdps])
+        country_gdps = gdp_data.append([d.gdp for d in gdps])
+
+    cds = ColumnDataSource(data=dict(
+        country_years=year_data, 
+        country_gdps=gdp_data,
+        names=c,
+        colors=['red', 'blue', 'green']
+    ))
+
+    fig = figure(height=500, title=f"{country} GDP")
+    fig.title.align = 'center'
+    fig.title.text_font_size = '1.5em'
+    fig.yaxis[0].formatter = NumeralTickFormatter(format="$0.0a")
+
+    fig.multi_line(
+        source=cds, 
+        xs='country_years', 
+        ys='country_gdps', 
+        line_width=2,
+        legend_group='names',
+        line_color='colors')
+
+    fig.legend.location = 'top_left'
+
+    script, div = components(fig)
+
+    context = {
+        'countries': countries,
+        'country': country,
+        'script': script, 
+        'div': div,
+    }
+
+    if request.htmx:
+        return render(request, 'partials/gdp-bar.html', context)
+    return render(request, 'line.html', context)
