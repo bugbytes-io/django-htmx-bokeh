@@ -61,7 +61,7 @@ def line(request):
     countries = GDP.objects.values_list('country', flat=True).distinct()
     country = request.GET.get('country', 'Germany')
 
-    gdps = GDP.objects.filter(country=country).order_by('year')
+    # gdps = GDP.objects.filter(country=country).order_by('year')
 
     year_data = []
     gdp_data = []
@@ -69,8 +69,8 @@ def line(request):
 
     for country in c:
         gdps = GDP.objects.filter(country=country).order_by('year')
-        country_years = year_data.append([d.year for d in gdps])
-        country_gdps = gdp_data.append([d.gdp for d in gdps])
+        year_data.append([d.year for d in gdps])
+        gdp_data.append([d.gdp for d in gdps])
 
     cds = ColumnDataSource(data=dict(
         country_years=year_data, 
